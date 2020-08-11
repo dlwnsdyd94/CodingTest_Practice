@@ -1,3 +1,4 @@
+package Problem;
 class Solution {
 	public boolean detectCapitalUse(String word) {
 		int wordLength = word.length();
