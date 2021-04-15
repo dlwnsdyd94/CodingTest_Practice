@@ -1,79 +1,97 @@
-#include<bits/stdc++.h>
+#include <bits/stdc++.h>
 using namespace std;
 
-#define MAX 20
+int n, ret;
 
-int N;
-struct Game
-{
-	int map[MAX][MAX];
-	int count;
-	int value;
+struct BOARD {
+    int map[20][20];
+
+    void rotate() {
+        int temp[20][20];
+
+        for (int y = 0; y < n; ++y) {
+            for (int x = 0; x < n; ++x) {
+                temp[y][x] = map[n - x - 1][y];
+            }
+        }
+
+        for (int y = 0; y < n; ++y) {
+            for (int x = 0; x < n; ++x) {
+                map[y][x] = temp[y][x];
+            }
+        }
+    }
+
+    int get_max() {
+        int ret = 0;
+        for (int y = 0; y < n; ++y) {
+            for (int x = 0; x < n; ++x) {
+                if (ret < map[y][x]) {
+                    ret = map[y][x];
+                }
+            }
+        }
+        return ret;
+    }
+
+    void up() {
+        int temp[20][20];
+
+        for (int x = 0; x < n; ++x) {
+            int flag = 0, target = -1;
+            for (int y = 0; y < n; ++y) {
+                if (map[y][x] == 0) {
+                    continue;
+                }
+                if (flag == 1 && map[y][x] == temp[target][x]) {
+                    temp[target][x] *= 2, flag = 0;
+                }
+                else {
+                    temp[++target][x] = map[y][x], flag = 1;
+                }
+            }
+            for (++target; target < n; ++target) {
+                temp[target][x] = 0;
+            }
+        }
+        for (int y = 0; y < n; ++y) {
+            for (int x = 0; x < n; ++x) {
+                map[y][x] = temp[y][x];
+            }
+        }
+    }
 };
 
-int bfs(Game start)
-{
-	// 상하좌우
-	int dy[4] = {-1, 1, 0, 0};
-	int dx[4] = {0, 0, -1, 1};
+void dfs(BOARD cur, int count) {
+    if (count == 5) {
+        int candi = cur.get_max();
+        if (ret < candi) {
+            ret = candi;
+        }
+        return;
+    }
 
-	queue<Game> q;
-	q.push(start);
-
-	int ans = start.value;
-	while (!q.empty())
-	{
-		Game now_map = q.front();
-		q.pop();
-
-		if (now_map.count == 5)
-		{
-			// 최대값 알아내기 = ans
-			break;
-		}
-
-		for (int dir = 0; dir < 4; dir++)
-		{
-			int new_map[MAX][MAX];
-			memcpy(new_map, now_map.map, sizeof(now_map.map));
-
-			while (1)
-			{
-
-			}
-		}
-	}
-
-	return ans;
+    for (int dir = 0; dir < 4; ++dir) {
+        BOARD next = cur;
+        next.up();
+        dfs(next, count + 1);
+        cur.rotate();
+    }
 }
 
 int main()
 {
-	ios_base::sync_with_stdio(false);
-	cin.tie(NULL);
-	cout.tie(NULL);
+    BOARD board;
+    cin >> n;
+    for (int y = 0; y < n; ++y) {
+        for (int x = 0; x < n; ++x) {
+            cin >> board.map[y][x];
+        }
+    }
 
-	ifstream readFile;
-	readFile.open("input.txt");
-	readFile >> N;
+    ret = 0;
+    dfs(board, 0);
+    printf("%d\n", ret);
 
-	Game start;
-	int myMax = 0;
-	for (int y = 0; y < N; y++)
-	{
-		for (int x = 0; x < N; x++)
-		{
-			readFile >> start.map[y][x];
-			if (myMax < start.map[y][x])
-			{
-				myMax = start.map[y][x];
-			}
-		}
-	}
-	start.count = 0;
-	start.value = myMax;
-
-	cout << bfs(start);
-
-	return 0;
+    return 0;
 }
