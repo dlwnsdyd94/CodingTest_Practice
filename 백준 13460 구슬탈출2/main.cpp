@@ -1,18 +1,119 @@
 #include<bits/stdc++.h>
+#define MAX 10
 using namespace std;
 
 int N, M;
-char myMap[10][10];
-struct Point{ // R과 B의 현재 좌표에 쓰이는 구조체
-	int x;
-	int y;
+char myMap[MAX][MAX];
+int visited[MAX][MAX][MAX][MAX];
+struct Location
+{
+	int rx, ry, bx, by, count;
 };
-int dx[4] = {0, 0, -1, 1}; // 상하좌우
-int dy[4] = {-1, 1, 0, 0}; // 상하좌우
-bool R_check[10][10];
-bool B_check[10][10];
 
-int ans; // 정답
+//상하좌우
+int dx[4] = {0, 0, -1, 1};
+int dy[4] = {-1, 1, 0, 0};
+
+int bfs(Location start)
+{
+	queue<Location> q;
+	q.push(start);
+	visited[start.ry][start.rx][start.by][start.bx] = 1;
+
+	int ans = -1;
+	while (!q.empty())
+	{
+		Location now_location = q.front();
+		q.pop();
+
+		if (now_location.count > 10) break;
+		if(myMap[now_location.ry][now_location.rx] == 'O' && myMap[now_location.by][now_location.bx] != 'O')
+		{
+			ans = now_location.count;
+			break;
+		}
+
+		for (int i = 0; i < 4; i++)
+		{
+			int new_rx = now_location.rx;
+			int new_ry = now_location.ry;
+			int new_bx = now_location.bx;
+			int new_by = now_location.by;
+
+			//R의 입장
+			while (1)
+			{
+				if (myMap[new_ry][new_rx] != '#' && myMap[new_ry][new_rx] != 'O')
+				{
+					new_ry += dy[i];
+					new_rx += dx[i];
+				}
+				else
+				{
+					if (myMap[new_ry][new_rx] == '#')
+					{
+						new_ry -= dy[i];
+						new_rx -= dx[i];
+					}
+					break;
+				}
+			}
+
+			//B의 입장
+			while (1)
+			{
+				if (myMap[new_by][new_bx] != '#' && myMap[new_by][new_bx] != 'O')
+				{
+					new_by += dy[i];
+					new_bx += dx[i];
+				}
+				else
+				{
+					if (myMap[new_by][new_bx] == '#')
+					{
+						new_by -= dy[i];
+						new_bx -= dx[i];
+					}
+					break;
+				}
+			}
+
+			if (new_ry == new_by && new_rx == new_bx)
+			{
+				if (myMap[new_ry][new_rx] != 'O')
+				{
+					int dist_r = abs(new_ry - now_location.ry) + abs(new_rx - now_location.rx);
+					int dist_b = abs(new_by - now_location.by) + abs(new_bx - now_location.bx);
+
+					if (dist_r > dist_b)
+					{
+						new_ry -= dy[i];
+						new_rx -= dx[i];
+					}
+					else
+					{
+						new_by -= dy[i];
+						new_bx -= dx[i];
+					}
+				}
+			}
+
+			//push
+			if (visited[new_ry][new_rx][new_by][new_bx] == 0)
+			{
+				visited[new_ry][new_rx][new_by][new_bx] = 1;
+				Location next;
+				next.ry = new_ry;
+				next.rx = new_rx;
+				next.by = new_by;
+				next.bx = new_bx;
+				next.count = now_location.count + 1;
+				q.push(next);
+			}
+		}
+	}
+	return ans;
+}
 
 int main()
 {
@@ -20,107 +121,31 @@ int main()
 	cin.tie(NULL);
 	cout.tie(NULL);
 
-	// 파일 입력
 	ifstream readFile;
 	readFile.open("input.txt");
 	readFile >> N >> M;
-	
-	// map 만들기
-	// R과 B의 좌표 저장
-	Point R_point, B_point;
+
+	Location start;
 	for (int y = 0; y < N; y++)
+	{
 		for (int x = 0; x < M; x++)
 		{
 			readFile >> myMap[y][x];
 			if (myMap[y][x] == 'R')
 			{
-				// R의 좌표 저장
-				R_point.y = y;
-				R_point.x = x;
-				R_check[y][x] = true;
+				start.ry = y;
+				start.rx = x;
 			}
 			else if (myMap[y][x] == 'B')
 			{
-				// B의 좌표 저장
-				B_point.y = y;
-				B_point.x = x;
-				B_check[y][x] = true;
+				start.by = y;
+				start.bx = x;
 			}
 		}
-
-	// R의 입장에서 상하좌우 네 방향으로 '#'이나 'O', 'B'가 있을때까지 쭉 이동
-	for (int i = 0; i < 4; i++)
-	{
-		int R_new_x = R_point.x + dx[i];
-		int R_new_y = R_point.y + dy[i];
-
-		// 새로운 위치가 둘러싸여있는 벽 안에 위치하는지 체크
-		if (R_new_x <= 0 || R_new_x >= M - 1 || R_new_y <= 0 || R_new_y >= N - 1 || R_check[R_new_y][R_new_x] == true) // 이미 지나온 위치는 다시 안간다.
-			continue;
-
-		ans++; // 방향 + 1
-		if (ans > 10)
-		{
-			cout << -1;
-			return 0;
-		}
-
-		while (myMap[R_new_y][R_new_x] != '#' && myMap[R_new_y][R_new_x] != 'B')
-		{
-			if (myMap[R_new_y][R_new_x] == 'O')
-			{
-				// 종료
-				cout << ans;
-				return 0;
-			}
-			else if (myMap[R_new_y][R_new_x] == '#' || myMap[R_new_y][R_new_x] == 'B')
-			{
-				continue;
-			}
-
-			// R의 현재위치 갱신
-			R_point.x = R_new_x;
-			R_point.y = R_new_y;
-			R_check[R_new_y][R_new_x] = true;
-
-			// R의 다음 위치
-			R_new_x = R_point.x + dx[i];
-			R_new_y = R_point.y + dy[i];
-		}
-
-		int B_new_x = B_point.x + dx[i];
-		int B_new_y = B_point.y + dy[i];
-
-		// 새로운 위치가 둘러싸여있는 벽 안에 위치하는지 체크
-		if (B_new_x <= 0 || B_new_x >= M - 1 || B_new_y <= 0 || B_new_y >= N - 1) // 이미 지나갔던 위치에 또 가도 상관 없음
-			continue;
-
-		while (myMap[B_new_y][B_new_x] != '#' && myMap[B_new_y][B_new_x] != 'B')
-		{
-			if (myMap[B_new_y][B_new_x] == 'O')
-			{
-				// 종료
-				cout << ans;
-				return 0;
-			}
-			else if (myMap[B_new_y][B_new_x] == '#' || myMap[B_new_y][B_new_x] == 'B')
-			{
-				continue;
-			}
-
-			// R의 현재위치 갱신
-			R_point.x = B_new_x;
-			R_point.y = B_new_y;
-			R_check[B_new_y][B_new_x] = true;
-
-			// R의 다음 위치
-			B_new_x = R_point.x + dx[i];
-			B_new_y = R_point.y + dy[i];
-		}
-
-		i = 0; // 방향 초기화
 	}
+	start.count = 0;
+
+	cout << bfs(start);
 
 	return 0;
 }
-
