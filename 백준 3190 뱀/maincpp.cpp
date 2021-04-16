@@ -1,60 +1,75 @@
 #include<bits/stdc++.h>
 using namespace std;
 
-#define MAX 100
+#define MAX 101
 
 int N, K;
-int ans;
-int myMap[MAX][MAX]; // 사과의 위치를 포함하고 있는 지도
-
+int appleMap[MAX][MAX]; // 사과의 위치를 포함하고 있는 지도
 int L;
-struct Direction
-{
-	int second;
-	char dir;
-};
-vector<Direction> v;
 
-//상하좌우 방향
-// 상 dir : 0
+//상우하좌 방향 : 시계방향
+// 우 dir : 0
 // 하 dir : 1
 // 좌 dir : 2
-// 우 dir : 3
-int dy[4] = { -1, 1, 0, 0 };
-int dx[4] = { 0, 0, -1, 1 };
+// 상 dir : 3
+int dy[4] = {0, 1, 0, -1};
+int dx[4] = {1, 0, -1, 0};
 
 struct Snake
 {
-	int y, x, dy, dx, count;
+	queue<pair<int, int>> q;
+	int Map[MAX][MAX];
+	int y, x; // 머리 위치
+	int dy, dx, dir; // 머리 방향
+	int time; // 뱀의 "현재" 시간
 };
-int visited[MAX][MAX];
+Snake snake;
 
-void myMove(Snake start)
+char cmd[10101];
+
+int myMove()
 {
-	queue<Snake> q;
-	q.push(start);
-	visited[start.y][start.x] = 1;
-
 	while (1)
 	{
-		Snake now_cur = q.front();
+		// 현재 방향대로 다음칸 이동
+		snake.time += 1;
+		snake.y += snake.dy;
+		snake.x += snake.dx;
 
-		int next_y = now_cur.y + now_cur.dy;
-		int next_x = now_cur.x + now_cur.dx;
-
-		if (next_y >= N || next_y < 0 || next_x >= N || next_x < 0)
+		if (snake.y >= N || snake.y < 0 || snake.x >= N || snake.x < 0 || snake.Map[snake.y][snake.x] == 1) 
 		{
-			ans = now_cur.count + 1;
-			break;
-		}
-		if (visited[next_y][next_x] == 1)
-		{
-			ans = now_cur.count + 1;
 			break;
 		}
 
+		snake.Map[snake.y][snake.x] = 1;
+		snake.q.push({ snake.y, snake.x });
 
+		// 사과
+		if (appleMap[snake.y][snake.x] == 0)
+		{
+			snake.Map[snake.q.front().first][snake.q.front().second] = 0;
+			snake.q.pop();
+		}
+		else
+		{
+			appleMap[snake.y][snake.x] = 0;
+		}
+
+		// 다음 방향 설정
+		if (cmd[snake.time] == 'D')
+		{
+			snake.dir = (snake.dir + 1) % 4;
+		}
+		else if (cmd[snake.time] == 'L')
+		{
+			snake.dir = (snake.dir + 3) % 4;
+		}
+
+		snake.dy = dy[snake.dir];
+		snake.dx = dx[snake.dir];
 	}
+
+	return snake.time;
 }
 
 int main()
@@ -71,7 +86,7 @@ int main()
 	{
 		int y, x;
 		readFile >> y >> x;
-		myMap[y - 1][x - 1] = 1;
+		appleMap[y - 1][x - 1] = 1;
 	}
 
 	readFile >> L;
@@ -80,18 +95,20 @@ int main()
 		int sec;
 		char dir;
 		readFile >> sec >> dir;
-		v.push_back({sec, dir});
+		cmd[sec] = dir;
 	}
 
-	Snake start;
-	start.y = 0;
-	start.x = 0;
-	start.dy = dy[3];
-	start.dx = dx[3];
-	start.count = 0;
+	// start 정보
+	snake.q.push({0, 0});
+	snake.Map[0][0] = 1;
+	snake.y = 0;
+	snake.x = 0;
+	snake.dir = 0; // 오른쪽을 나타냄
+	snake.dy = dy[0]; // 오른쪽 방향
+	snake.dx = dx[0]; // 오른쪽 방향
+	snake.time = 0;
 
-	myMove(start);
-	cout << ans;
+	cout << myMove();
 
 	return 0;
 }
