@@ -111,4 +111,5 @@ int main()
 	cout << myMove();
 
 	return 0;
+
 }
